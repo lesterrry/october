@@ -23,7 +23,9 @@ me@aydar.media
 #define EEPROM_INITIAL_TEMP_SET_ADDRESS    0
 #define TEMP_SET_MAX                       30
 #define TEMP_SET_MIN                       10
-#define EXT_TEMP_ENABLED                   0
+#define TEMP_GRACE_INC                     1
+#define TEMP_GRACE_DEC                     0
+#define EXT_TEMP_ENABLED                   1
 
 #include <EEPROM.h>
 #include <Wire.h>

@@ -101,9 +101,9 @@ void switchMode() {
 }
 
 void resolveAutoRelayCommand() {
-  if (tempInt >= tempSet) {
+  if (tempInt >= tempSet + TEMP_GRACE_INC) {
     relay.off();
-  } else {
+  } else if (tempInt < tempSet + TEMP_GRACE_DEC) {
     relay.on();
   }
 }
