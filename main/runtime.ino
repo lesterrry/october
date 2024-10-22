@@ -16,7 +16,7 @@ bool tempSetSaved = true;
 bool displaySleeping = false;
 bool knobDown = false;
 bool earlyClick = true;  // hack to disable false clicks on startup
-Mode currentMode = Off;
+Mode currentMode = Auto;  // TODO: save to EEPROM
 
 unsigned long timer_updateClimateData;
 unsigned long timer_knobDown;
