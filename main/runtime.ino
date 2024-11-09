@@ -142,6 +142,8 @@ void setup() {
 
   getClimateData(false);
 
+  setRelay();
+
   render();
 
   timer_updateClimateData = millis();
