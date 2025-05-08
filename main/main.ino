@@ -5,7 +5,7 @@ Universal thermostatic relay
 me@aydar.media
 ******************************/
 
-#define DEBUG 1
+#define DEBUG 0
 
 #undef CLEAR_EEPROM
 

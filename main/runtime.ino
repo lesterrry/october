@@ -23,6 +23,10 @@ Mode currentMode = Auto;
 unsigned long timer_updateClimateData;
 unsigned long timer_knobDown;
 
+const char SEP = ';';
+
+void(* reset) (void) = 0;
+
 String getFormattedClimateValue(float value, bool isHumidity) {
   int8_t minimum = isHumidity ? 0 : -40;
   
@@ -127,8 +131,63 @@ void setRelay() {
   }
 }
 
+String getParseableState() {
+  return String(currentMode) + SEP + String(tempSet) + SEP + String(tempInt) + SEP + String(tempExt) + SEP + String(humidInt) + SEP + String(humidExt);
+}
+
+bool resolveSerialCommand(String command) {
+  if (command.length() == 0) {
+    serial.respond(F("ERROR: CMD EMPTY"));
+    return false;
+  }
+
+  if (command == "S") {
+    serial.respond(getParseableState());
+    return false;
+  } else if (command == "R") {
+    reset();
+  }
+  
+  int separatorIndex = command.indexOf(';');
+
+  if (separatorIndex == -1) {
+    serial.respond(F("ERROR: CMD CORRUPT"));
+    return false;
+  }
+  
+  String modeStr = command.substring(0, separatorIndex);
+  String tempStr = command.substring(separatorIndex + 1);
+  
+  modeStr.trim();
+  tempStr.trim();
+  
+  int newMode = modeStr.toInt();
+  if (modeStr != String(newMode) || newMode < Mode::Auto || newMode > Mode::Off) {
+    serial.respond(F("ERROR: MODE CORRUPT"));
+    return false;
+  }
+  
+  int newTemp = tempStr.toInt();
+  if (tempStr != String(newTemp) || newTemp < TEMP_SET_MIN || newTemp > TEMP_SET_MAX) {
+    serial.respond(F("ERROR: TEMP CORRUPT"));
+    return false;
+  }
+  
+  currentMode = newMode;
+  tempSet = newTemp;
+
+  serial.respond(getParseableState());
+
+  setRelay();
+
+  render();
+
+  return true;
+}
+
 void setup() {
   logger.begin();
+  serial.begin();
   display.begin();
 
   display.print(F("SUBURBS:"));
@@ -155,13 +214,17 @@ void setup() {
 }
 
 void loop() {
-  unsigned long current = millis();
-
-  bool anyAction = false;
-
   knob.update();
 
+  unsigned long current = millis();
+  bool anyAction = false;
   bool isLeft = knob.isLeft(); bool isRight = knob.isRight(); 
+
+  String command = serial.getCommand();
+
+  if (command != "") {
+    anyAction = resolveSerialCommand(command);
+  }
 
   if (isLeft || isRight) {
     anyAction = true;
