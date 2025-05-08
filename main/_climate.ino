@@ -3,11 +3,11 @@ class ClimateSensor {
     ClimateSensor(int dtPin, int sckPin)
       : _sensor(dtPin, sckPin) {}
 
-    int8_t getTemp() {
+    float getTemp() {
       return _sensor.readTemperatureC();
     }
 
-    int8_t getHumidity() {
+    float getHumidity() {
       return _sensor.readHumidity();
     }
 

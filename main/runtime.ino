@@ -1,4 +1,5 @@
 Logger logger(DEBUG);
+SerialCommunicator serial(!DEBUG);
 Relay relay(RELAY_PIN);
 Knob knob(ENC_CLK_PIN, ENC_DT_PIN, ENC_SW_PIN);
 Display display(LED_ADDRESS, LED_WIDTH, LED_HEIGHT);
@@ -6,22 +7,23 @@ ClimateSensor sensorInt(TEMPA_DT_PIN, TEMPA_SCK_PIN);
 ClimateSensor sensorExt(TEMPB_DT_PIN, TEMPB_SCK_PIN);
 
 MemoryEntry mem_tempSet(EEPROM_INITIAL_TEMP_SET_ADDRESS);
+MemoryEntry mem_currentMode(EEPROM_INITIAL_MODE_ADDRESS);
 
-int8_t tempInt;
-int8_t tempExt;
-int8_t humidInt;
-int8_t humidExt;
+float tempInt;
+float tempExt;
+float humidInt;
+float humidExt;
 int8_t tempSet;
-bool tempSetSaved = true;
+bool settingsSaved = true;
 bool displaySleeping = false;
 bool knobDown = false;
 bool earlyClick = true;  // hack to disable false clicks on startup
-Mode currentMode = Auto;  // TODO: save to EEPROM
+Mode currentMode = Auto;
 
 unsigned long timer_updateClimateData;
 unsigned long timer_knobDown;
 
-String getFormattedClimateValue(int8_t value, bool isHumidity) {
+String getFormattedClimateValue(float value, bool isHumidity) {
   int8_t minimum = isHumidity ? 0 : -40;
   
   String str = value <= minimum ? "--" : String(value);
@@ -32,6 +34,7 @@ String getFormattedClimateValue(int8_t value, bool isHumidity) {
 void saveSettings() {
   logger.print(F("Saving settings..."));
   mem_tempSet.write(tempSet);
+  mem_currentMode.write(currentMode);
 }
 
 void getClimateData(bool showBusy = true) {
@@ -56,8 +59,8 @@ void render(bool isHumidity = false) {
   display.clear();
 
   if (EXT_TEMP_ENABLED) {
-    display.print("OUT", 4, 0);
-    display.print("IN", 4, 1);
+    display.print("OUT", 7, 0);
+    display.print("IN", 7, 1);
     display.print(getFormattedClimateValue(isHumidity ? humidExt : tempExt, isHumidity), 0, 0);
   }
 
@@ -134,7 +137,9 @@ void setup() {
   logger.print(F("October initializing..."));
 
   tempSet = mem_tempSet.read();
-  logger.print("EEPROM: " + String(tempSet));
+  currentMode = mem_currentMode.read();
+  logger.print("EEPROM TEMP: " + String(tempSet));
+  logger.print("EEPROM MODE: " + String(currentMode));
 
   #ifdef CLEAR_EEPROM
     mem_tempSet.write(0);
@@ -153,7 +158,6 @@ void loop() {
   unsigned long current = millis();
 
   bool anyAction = false;
-  bool settingsChanged = false;
 
   knob.update();
 
@@ -163,7 +167,6 @@ void loop() {
     anyAction = true;
     if (!displaySleeping && currentMode == Auto) {
       adjustSetTemp(isRight);
-      settingsChanged = true;
     }
   } else if (knob.isClick()) {
     if (earlyClick) {
@@ -187,14 +190,11 @@ void loop() {
     display.setBacklight();
     displaySleeping = false;
     earlyClick = false;
+    settingsSaved = false;
 
     render(false);
     
     timer_updateClimateData = current;
-  }
-
-  if (settingsChanged) {
-    tempSetSaved = false;
   }
 
   if (current - timer_knobDown >= 1000 && knobDown) {
@@ -205,10 +205,10 @@ void loop() {
   if (current - timer_updateClimateData >= 20000) {
     display.setBacklight(false);
     displaySleeping = true;
-    
-    if (!tempSetSaved) { 
+
+    if (!settingsSaved) { 
       saveSettings();
-      tempSetSaved = true;
+      settingsSaved = true;
     }
 
     getClimateData();

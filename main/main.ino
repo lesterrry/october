@@ -5,7 +5,7 @@ Universal thermostatic relay
 me@aydar.media
 ******************************/
 
-#define DEBUG 0
+#define DEBUG 1
 
 #undef CLEAR_EEPROM
 
@@ -21,6 +21,7 @@ me@aydar.media
 #define LED_WIDTH                          16
 #define LED_HEIGHT                         2
 #define EEPROM_INITIAL_TEMP_SET_ADDRESS    0
+#define EEPROM_INITIAL_MODE_ADDRESS        2
 #define TEMP_SET_MAX                       30
 #define TEMP_SET_MIN                       10
 #define TEMP_GRACE_INC                     1
