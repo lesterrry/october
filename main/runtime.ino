@@ -132,7 +132,9 @@ void setRelay() {
 }
 
 String getParseableState() {
-  return String(currentMode) + SEP + String(tempSet) + SEP + String(tempInt) + SEP + String(tempExt) + SEP + String(humidInt) + SEP + String(humidExt);
+  char currentState = relay.getState() ? '1' : '0';
+
+  return String(currentMode) + SEP + currentState + SEP + String(tempSet) + SEP + String(tempInt) + SEP + String(tempExt) + SEP + String(humidInt) + SEP + String(humidExt);
 }
 
 bool resolveSerialCommand(String command) {
